@@ -57,13 +57,15 @@ func (ec entryCollection) Len() int { return len(ec) }
 func (ec entryCollection) Less(i, j int) bool {
 	entry1 := ec[i]
 	entry2 := ec[j]
-	isTitle1Short := len(entry1.title) <= 5
-	isTitle2Short := len(entry2.title) <= 5
+	title1InWords := strings.Split(entry1.title, " ")
+	title2InWords := strings.Split(entry2.title, " ")
+	isTitle1Short := len(title1InWords) <= 5
+	isTitle2Short := len(title2InWords) <= 5
 
 	if isTitle1Short && !isTitle2Short {
-		return true
-	} else if !isTitle1Short && isTitle2Short {
 		return false
+	} else if !isTitle1Short && isTitle2Short {
+		return true
 	} else if isTitle1Short && isTitle2Short { // both short
 		return entry1.nPoints > entry2.nPoints
 	} else { // both long
