@@ -6,6 +6,8 @@ import (
 	"log"
 	"net/http"
 	"regexp"
+	"sort"
+	"strconv"
 	"strings"
 )
 
@@ -15,17 +17,18 @@ type scrapper struct {
 	captureNPointsRegex  *regexp.Regexp
 }
 
-func (s scrapper) init() error {
+func (s *scrapper) init() error {
 	var (
 		wrapErr = errorWrapper("init: %w")
 		err     error
 	)
 
-	s.captureTitleRegex, err = regexp.Compile(`class="titlelink">(.*)</a><span`)
+	// may encounter a `rel="nofollow"` in between
+	s.captureTitleRegex, err = regexp.Compile(`class="titlelink".*?>(.+?)<\/a>`)
 	if err != nil {
 		return wrapErr(err)
 	}
-	s.captureNComentsRegex, err = regexp.Compile(`(\d+)&nbsp;comments`)
+	s.captureNComentsRegex, err = regexp.Compile(`(\d+)&nbsp;comment`)
 	if err != nil {
 		return wrapErr(err)
 	}
@@ -79,17 +82,66 @@ func main() {
 	readText, _ := ioutil.ReadAll(response.Body)
 
 	result1 := strings.Split(string(readText), `id="pagespace"`)
+	//fmt.Println(result1)
+
 	result2 := strings.Split(result1[1], `</table>`)
+	//fmt.Println(result2)
 
 	results := strings.Split(result2[0], "\n")
 
-	for idx, result := range results {
-		if idx == 0 {
-			continue
-		}
+	// fmt.Println(results)
+	// fmt.Println(len(results))
+
+	s := scrapper{}
+	s.init()
+
+	resultCollection := make(entryCollection, 0)
+	for idx := uint(1); len(resultCollection) < 30; {
+		newEntry := s.extractEntry(idx, results)
+		resultCollection = append(resultCollection, newEntry)
+		idx = idx + 4
+	}
+
+	sort.Sort(resultCollection)
+	for _, result := range resultCollection {
+
 		fmt.Println(result)
 	}
 
+}
+
+func (s scrapper) extractEntry(idx uint, entries []string) entry {
+	var (
+		title       string
+		nComments64 uint64
+		nPoints64   uint64
+	)
+	firstRow := entries[idx+1]
+	secondRow := entries[idx+2]
+
+	fmt.Println(firstRow)
+	fmt.Println()
+	// fmt.Println(secondRow)
+
+	titleResult := s.captureTitleRegex.FindStringSubmatch(firstRow)
+	nCommentsResult := s.captureNComentsRegex.FindStringSubmatch(secondRow)
+	nPointsResult := s.captureNPointsRegex.FindStringSubmatch(secondRow)
+
+	if len(titleResult) > 0 {
+		title = titleResult[1]
+	} // return err
+	if len(nCommentsResult) > 0 {
+		nComments64, _ = strconv.ParseUint(nCommentsResult[1], 10, 32)
+	}
+	if len(nPointsResult) > 0 {
+		nPoints64, _ = strconv.ParseUint(nPointsResult[1], 10, 32)
+	}
+
+	return entry{
+		title:     title,
+		nComments: uint(nComments64),
+		nPoints:   uint(nPoints64),
+	}
 }
 
 // errorWrapper will wrap error messages inside a desired format for proper error management and tracking
