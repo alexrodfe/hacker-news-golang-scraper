@@ -47,6 +47,8 @@ type entry struct {
 	nPoints   uint
 }
 
+var emptyEntry = entry{}
+
 // entryCollection is a collection of entries,
 // this type is declared so we can define some sorting needed functions
 type entryCollection []entry
@@ -93,7 +95,9 @@ func main() {
 	resultCollection := make(entryCollection, 0)
 	for idx := 1; len(resultCollection) < 30 && idx < len(results)-2; {
 		newEntry := s.extractEntry(idx, results)
-		resultCollection = append(resultCollection, newEntry)
+		if newEntry != emptyEntry { // do not append empty entries
+			resultCollection = append(resultCollection, newEntry)
+		}
 		idx = idx + 4
 	}
 
