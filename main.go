@@ -63,9 +63,9 @@ func (ec entryCollection) Less(i, j int) bool {
 	} else if !isTitle1Short && isTitle2Short {
 		return false
 	} else if isTitle1Short && isTitle2Short { // both short
-		return entry1.nComments < entry2.nComments
+		return entry1.nPoints > entry2.nPoints
 	} else { // both long
-		return entry1.nPoints < entry2.nPoints
+		return entry1.nComments > entry2.nComments
 	}
 
 }
