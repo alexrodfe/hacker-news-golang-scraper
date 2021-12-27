@@ -82,21 +82,16 @@ func main() {
 	readText, _ := ioutil.ReadAll(response.Body)
 
 	result1 := strings.Split(string(readText), `id="pagespace"`)
-	//fmt.Println(result1)
 
 	result2 := strings.Split(result1[1], `</table>`)
-	//fmt.Println(result2)
 
 	results := strings.Split(result2[0], "\n")
-
-	// fmt.Println(results)
-	// fmt.Println(len(results))
 
 	s := scrapper{}
 	s.init()
 
 	resultCollection := make(entryCollection, 0)
-	for idx := uint(1); len(resultCollection) < 30; {
+	for idx := 1; len(resultCollection) < 30 && idx < len(results)-2; {
 		newEntry := s.extractEntry(idx, results)
 		resultCollection = append(resultCollection, newEntry)
 		idx = idx + 4
@@ -110,7 +105,7 @@ func main() {
 
 }
 
-func (s scrapper) extractEntry(idx uint, entries []string) entry {
+func (s scrapper) extractEntry(idx int, entries []string) entry {
 	var (
 		title       string
 		nComments64 uint64
@@ -118,10 +113,6 @@ func (s scrapper) extractEntry(idx uint, entries []string) entry {
 	)
 	firstRow := entries[idx+1]
 	secondRow := entries[idx+2]
-
-	fmt.Println(firstRow)
-	fmt.Println()
-	// fmt.Println(secondRow)
 
 	titleResult := s.captureTitleRegex.FindStringSubmatch(firstRow)
 	nCommentsResult := s.captureNComentsRegex.FindStringSubmatch(secondRow)
