@@ -37,6 +37,37 @@ func (s scrapper) init() error {
 	return nil
 }
 
+// entry will represent an article and their relevant information important to us
+type entry struct {
+	title     string
+	nComments uint
+	nPoints   uint
+}
+
+// entryCollection is a collection of entries,
+// this type is declared so we can define some sorting needed functions
+type entryCollection []entry
+
+func (ec entryCollection) Len() int { return len(ec) }
+func (ec entryCollection) Less(i, j int) bool {
+	entry1 := ec[i]
+	entry2 := ec[j]
+	isTitle1Short := len(entry1.title) <= 5
+	isTitle2Short := len(entry2.title) <= 5
+
+	if isTitle1Short && !isTitle2Short {
+		return true
+	} else if !isTitle1Short && isTitle2Short {
+		return false
+	} else if isTitle1Short && isTitle2Short { // both short
+		return entry1.nComments < entry2.nComments
+	} else { // both long
+		return entry1.nPoints < entry2.nPoints
+	}
+
+}
+func (ec entryCollection) Swap(i, j int) { ec[i], ec[j] = ec[j], ec[i] }
+
 func main() {
 	// Make request
 	response, err := http.Get("https://news.ycombinator.com/")
