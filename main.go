@@ -5,6 +5,7 @@ import (
 	"io/ioutil"
 	"log"
 	"net/http"
+	"os"
 	"regexp"
 	"sort"
 	"strconv"
@@ -76,6 +77,8 @@ func (ec entryCollection) Less(i, j int) bool {
 func (ec entryCollection) Swap(i, j int) { ec[i], ec[j] = ec[j], ec[i] }
 
 func main() {
+	wrapErr := errorWrapper("error in main: %w")
+
 	// Make request
 	response, err := http.Get("https://news.ycombinator.com/")
 	if err != nil {
@@ -83,16 +86,32 @@ func main() {
 	}
 	defer response.Body.Close()
 
-	readText, _ := ioutil.ReadAll(response.Body)
+	webpage, err := ioutil.ReadAll(response.Body)
+	if err != nil {
+		fmt.Println(wrapErr(err))
+		os.Exit(1)
+	}
 
-	result1 := strings.Split(string(readText), `id="pagespace"`)
+	s := scrapper{}
+	s.init()
+
+	resultCollection, err := s.scrapWebpage(webpage)
+	if err != nil {
+		fmt.Println(wrapErr(err))
+		os.Exit(1)
+	}
+
+	for _, result := range resultCollection {
+		fmt.Println(result)
+	}
+}
+
+func (s scrapper) scrapWebpage(webpage []byte) (entryCollection, error) {
+	result1 := strings.Split(string(webpage), `id="pagespace"`)
 
 	result2 := strings.Split(result1[1], `</table>`)
 
 	results := strings.Split(result2[0], "\n")
-
-	s := scrapper{}
-	s.init()
 
 	resultCollection := make(entryCollection, 0)
 	for idx := 1; len(resultCollection) < 30 && idx < len(results)-2; {
@@ -104,11 +123,7 @@ func main() {
 	}
 
 	sort.Sort(resultCollection)
-	for _, result := range resultCollection {
-
-		fmt.Println(result)
-	}
-
+	return resultCollection, nil
 }
 
 func (s scrapper) extractEntry(idx int, entries []string) entry {
