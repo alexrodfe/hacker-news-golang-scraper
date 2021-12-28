@@ -23,6 +23,11 @@ var EmptyEntry = Entry{}
 type EntryCollection []Entry
 
 func (ec EntryCollection) Len() int { return len(ec) }
+
+// Less will apply our sorting rules, which are the following:
+// Titles with more than 5 words come first
+// If both titles have more than 5 words, greater number of comments comes first
+// If both titles are short, greater number of points comes first
 func (ec EntryCollection) Less(i, j int) bool {
 	entry1 := ec[i]
 	entry2 := ec[j]
@@ -52,11 +57,11 @@ type Scraper struct {
 
 func (s *Scraper) Init() error {
 	var (
-		wrapErr = errorutility.ErrorWrapper("init: %w")
+		wrapErr = errorutility.ErrorWrapper("scraper init: %w")
 		err     error
 	)
 
-	// may encounter a `rel="nofollow"` in between
+	// first ".*?" is because we may encounter a `rel="nofollow"` in between
 	s.captureTitleRegex, err = regexp.Compile(`class="titlelink".*?>(.+?)<\/a>`)
 	if err != nil {
 		return wrapErr(err)
@@ -73,15 +78,17 @@ func (s *Scraper) Init() error {
 	return nil
 }
 
-func (s Scraper) ScrapWebpage(webpage []byte) (EntryCollection, error) {
-	result1 := strings.Split(string(webpage), `id="pagespace"`)
+// ScrapWebpage will take as input a webpage as raw data and return an ordered entry collection
+// For this we have overfited the function to Hacker News' HTML code, making precise cuts within their page structure
+func (s Scraper) ScrapWebpage(webpage []byte) EntryCollection {
+	result1 := strings.Split(string(webpage), `id="pagespace"`) // we want to start scraping from first entry
 
-	result2 := strings.Split(result1[1], `</table>`)
+	result2 := strings.Split(result1[1], `</table>`) // our data end will be the end of the table
 
-	results := strings.Split(result2[0], "\n")
+	results := strings.Split(result2[0], "\n") // now all entries will come in a 3 rows group
 
 	resultCollection := make(EntryCollection, 0)
-	for idx := 1; len(resultCollection) < 30 && idx < len(results)-2; {
+	for idx := 1; len(resultCollection) < 30 && idx < len(results)-2; { // we want 30 entries but what if there are less?
 		newEntry := s.ExtractEntry(idx, results)
 		if newEntry != EmptyEntry { // do not append empty entries
 			resultCollection = append(resultCollection, newEntry)
@@ -90,9 +97,12 @@ func (s Scraper) ScrapWebpage(webpage []byte) (EntryCollection, error) {
 	}
 
 	sort.Sort(resultCollection)
-	return resultCollection, nil
+	return resultCollection
 }
 
+// ExtractEntry will take the next 3 rows from a given row collection and will try to extract data from said rows
+// data will be extracted following declared scraper regex rules, if no data is extracted function will suppose value is 0
+// except for title, title is mandatory, if no title is fetched function will stop and return empty Entry
 func (s Scraper) ExtractEntry(idx int, entries []string) Entry {
 	var (
 		title       string
@@ -108,7 +118,9 @@ func (s Scraper) ExtractEntry(idx int, entries []string) Entry {
 
 	if len(titleResult) > 0 {
 		title = titleResult[1]
-	} // return err
+	} else {
+		return EmptyEntry
+	}
 	if len(nCommentsResult) > 0 {
 		nComments64, _ = strconv.ParseUint(nCommentsResult[1], 10, 32)
 	}

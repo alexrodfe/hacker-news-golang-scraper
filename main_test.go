@@ -33,8 +33,7 @@ func (suite *MainTestSuite) TestExample1() {
 	data, err := ioutil.ReadAll(f)
 	require.NoError(suite.T(), err)
 
-	resultCollection, err := suite.Scraper.ScrapWebpage(data)
-	require.NoError(suite.T(), err)
+	resultCollection := suite.Scraper.ScrapWebpage(data)
 
 	suite.Len(resultCollection, 30)
 	suite.Equal(example1Result, resultCollection)

@@ -28,15 +28,15 @@ func main() {
 	}
 
 	s := scraper.Scraper{}
-	s.Init()
-
-	resultCollection, err := s.ScrapWebpage(webpage)
+	err = s.Init()
 	if err != nil {
 		fmt.Println(wrapErr(err))
 		os.Exit(1)
 	}
 
+	resultCollection := s.ScrapWebpage(webpage)
+
 	for _, result := range resultCollection {
-		fmt.Println(result)
+		fmt.Printf("Title: %s || nComments: %d || nPoints: %d\n", result.Title, result.NComments, result.NPoints)
 	}
 }
