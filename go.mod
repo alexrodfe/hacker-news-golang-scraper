@@ -1,4 +1,4 @@
-module hacker-news-golang-scraper
+module github.com/alexrodfe/hacker-news-golang-scraper
 
 go 1.17
 
