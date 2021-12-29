@@ -1,19 +1,21 @@
-package main
+package scraper
 
 import (
 	"io/ioutil"
 	"log"
+	"math/rand"
 	"os"
+	"sort"
 	"testing"
+	"time"
 
-	"github.com/alexrodfe/hacker-news-golang-scraper/scraper"
 	"github.com/stretchr/testify/require"
 	"github.com/stretchr/testify/suite"
 )
 
 type MainTestSuite struct {
 	suite.Suite
-	scraper.Scraper
+	Scraper
 }
 
 func TestMainTestSuite(t *testing.T) {
@@ -25,6 +27,33 @@ func (suite *MainTestSuite) SetupSuite() {
 	if err != nil {
 		log.Fatalf("could not init scrapper: %v", err)
 	}
+}
+
+func (suite *MainTestSuite) TestSortEntryCollection() {
+	var orderedCollection = EntryCollection{
+		{Title: "I've seen footage, I stay noided", NComments: 322, NPoints: 6},
+		{Title: "My starter is a shiny? More likely than you'd think", NComments: 252, NPoints: 350},
+		{Title: "Don't you even know dignity when you see it?", NComments: 120, NPoints: 550},
+		{Title: "Ratio: A modern take on social media", NComments: 115, NPoints: 265},
+		{Title: "You expected a reference? Too bad! It was me, a test!", NComments: 42, NPoints: 375},
+		{Title: "Like tears in the rain", NComments: 42, NPoints: 935},
+		{Title: "Speedrunning: a dream's nightmare", NComments: 858, NPoints: 640},
+		{Title: "Rivers in the desert", NComments: 5, NPoints: 515},
+		{Title: "Cognitive Behavioral Therapy", NComments: 404, NPoints: 321},
+		{Title: "The bionic Brooks", NComments: 547, NPoints: 11},
+	}
+
+	copyOfCollection := make(EntryCollection, len(orderedCollection))
+	copy(copyOfCollection, orderedCollection)
+
+	rand.Seed(time.Now().UnixNano())
+	rand.Shuffle(len(copyOfCollection), func(i, j int) {
+		copyOfCollection[i], copyOfCollection[j] = copyOfCollection[j], copyOfCollection[i]
+	})
+	suite.NotEqual(orderedCollection, copyOfCollection)
+
+	sort.Sort(copyOfCollection)
+	suite.Equal(orderedCollection, copyOfCollection)
 }
 
 func (suite *MainTestSuite) TestExample1() {
@@ -39,7 +68,7 @@ func (suite *MainTestSuite) TestExample1() {
 	suite.Equal(example1Result, resultCollection)
 }
 
-var example1Result = scraper.EntryCollection{
+var example1Result = EntryCollection{
 	{Title: "Ask HN: What is your spiritual practice?",
 		NComments: 621, // number of comments
 		NPoints:   289},
