@@ -19,7 +19,7 @@ git clone https://github.com/alexrodfe/hacker-news-golang-scraper.git
 
 This scraper has been designed to work with golang's native libraries, so no need for dependencies!
 
-The repo also includes some unitary testing, if you wish to run them as well on your own then you will need to install [testify](https://github.com/stretchr/testify).
+The repo also includes some unitary testing, if you wish to run the tests on your own you will need to install [testify](https://github.com/stretchr/testify).
 For this you can use the `go.mod` file attached or run:
 
 ```console
