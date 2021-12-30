@@ -10,7 +10,7 @@ Then sorted entries will be printed out by console output.
 
 ## Installation
 
-You just need [Go](https://go.dev/) !
+You just need [Go](https://go.dev/)!
 Alongside the code in this repository:
 
 ```console
